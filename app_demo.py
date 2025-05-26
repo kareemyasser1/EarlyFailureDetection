@@ -355,7 +355,13 @@ def single_prediction_page():
 def batch_prediction_page():
     st.markdown('<h2 class="sub-header">Batch Engine Prediction</h2>', unsafe_allow_html=True)
     
-    st.info("Upload a CSV file containing multiple engines' sensor data for batch prediction.")
+    st.info("Upload a CSV file containing sensor data for batch prediction.")
+    st.markdown("""
+    **📋 CSV Format Requirements:**
+    - **Required**: All 16 sensor feature columns (see Model Information page for details)
+    - **Optional**: `engine_id` column (will be added automatically if missing)
+    - **Note**: If your CSV contains data from multiple engines, include an `engine_id` column to identify each engine
+    """)
     
     uploaded_file = st.file_uploader("Choose a CSV file for batch prediction", type="csv")
     
@@ -370,14 +376,14 @@ def batch_prediction_page():
             if missing_features:
                 st.error(f"Missing required sensor features: {missing_features}")
                 st.info("💡 **Required sensor features**: " + ", ".join(FEATURES))
+                st.info("📝 **Note**: The 'engine_id' column is optional and will be added automatically if missing.")
                 return
             
-            # Handle engine_id column (add if missing for batch processing)
+            # Handle missing engine_id column (add it if not present)
             if 'engine_id' not in df.columns:
-                st.info("ℹ️ No 'engine_id' column found. Treating all data as from a single engine.")
+                st.info("ℹ️ No 'engine_id' column found. Adding default engine ID for batch processing...")
                 df.insert(0, 'engine_id', 1)  # Add engine_id column with default value 1
-            
-            st.success("✅ All required sensor features found!")
+                st.success("✅ Added default engine_id column")
             
             st.dataframe(df.head())
             
