@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  turbofan-rul-demo:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - STREAMLIT_SERVER_PORT=8501
+    volumes:
+      - ./best_cnn_lstm_model.h5:/app/best_cnn_lstm_model.h5:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  turbofan-rul-full:
+    build: .
+    command: ["streamlit", "run", "app.py", "--server.address", "0.0.0.0", "--server.port", "8502"]
+    ports:
+      - "8502:8502"
+    environment:
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - STREAMLIT_SERVER_PORT=8502
+    volumes:
+      - ./best_cnn_lstm_model.h5:/app/best_cnn_lstm_model.h5:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8502/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s 
