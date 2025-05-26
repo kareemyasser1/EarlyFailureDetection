@@ -175,7 +175,7 @@ def main():
     # Header
     st.markdown('<h1 class="main-header">🛩️ Turbofan Engine RUL Prediction System</h1>', unsafe_allow_html=True)
     
-    st.success("✅ Demo mode loaded successfully!")
+    # st.success("✅ Demo mode loaded successfully!")
     
     # Sidebar for navigation
     st.sidebar.title("Navigation")
@@ -364,27 +364,20 @@ def batch_prediction_page():
             df = pd.read_csv(uploaded_file)
             st.success("✅ File uploaded successfully!")
             
-            # Check required columns
-            required_cols = ['engine_id'] + FEATURES
-            missing_cols = [col for col in required_cols if col not in df.columns]
+            # Check required sensor columns (engine_id is optional)
+            missing_features = [col for col in FEATURES if col not in df.columns]
             
-            # Handle missing engine_id column
-            if 'engine_id' in missing_cols:
-                if len(missing_cols) == 1:  # Only engine_id is missing
-                    st.warning("⚠️ No 'engine_id' column found. Adding default engine ID...")
-                    df.insert(0, 'engine_id', 1)  # Add engine_id column with default value 1
-                    missing_cols.remove('engine_id')
-                    st.success("✅ Added default engine_id column")
-                else:
-                    st.error(f"Missing required columns: {missing_cols}")
-                    st.info("💡 **Tip**: Your CSV should include an 'engine_id' column and all sensor features. You can either:")
-                    st.info("1. Add an 'engine_id' column to your CSV file, or")
-                    st.info("2. Upload a file with only sensor data (engine_id will be added automatically)")
-                    return
-            elif missing_cols:
-                st.error(f"Missing required columns: {missing_cols}")
+            if missing_features:
+                st.error(f"Missing required sensor features: {missing_features}")
                 st.info("💡 **Required sensor features**: " + ", ".join(FEATURES))
                 return
+            
+            # Handle engine_id column (add if missing for batch processing)
+            if 'engine_id' not in df.columns:
+                st.info("ℹ️ No 'engine_id' column found. Treating all data as from a single engine.")
+                df.insert(0, 'engine_id', 1)  # Add engine_id column with default value 1
+            
+            st.success("✅ All required sensor features found!")
             
             st.dataframe(df.head())
             
