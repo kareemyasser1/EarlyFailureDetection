@@ -409,10 +409,41 @@ def batch_prediction_page():
                     
                     progress_bar.progress((i + 1) / len(unique_engines))
                 
-                # Display results
+                # Display results with color coding
                 results_df = pd.DataFrame(results)
                 st.subheader("📊 Batch Prediction Results")
-                st.dataframe(results_df, use_container_width=True)
+                
+                # Apply color styling to the dataframe
+                def color_status(val):
+                    if val == 'Healthy':
+                        return 'background-color: #d4edda; color: #155724; font-weight: bold'
+                    elif val == 'Near Failure':
+                        return 'background-color: #f8d7da; color: #721c24; font-weight: bold'
+                    return ''
+                
+                def color_probability(val):
+                    # Extract percentage value
+                    prob_val = float(val.strip('%')) / 100
+                    if prob_val <= 0.3:
+                        return 'background-color: #d4edda; color: #155724'
+                    elif prob_val <= 0.5:
+                        return 'background-color: #fff3cd; color: #856404'
+                    else:
+                        return 'background-color: #f8d7da; color: #721c24'
+                
+                def color_action(val):
+                    if val == 'Continue Operation':
+                        return 'background-color: #cce5ff; color: #004085; font-weight: bold'
+                    elif val == 'Schedule Maintenance':
+                        return 'background-color: #ffcccc; color: #8b0000; font-weight: bold'
+                    return ''
+                
+                # Style the dataframe
+                styled_df = results_df.style.applymap(color_status, subset=['Status']) \
+                                           .applymap(color_probability, subset=['Failure Probability']) \
+                                           .applymap(color_action, subset=['Recommended Action'])
+                
+                st.dataframe(styled_df, use_container_width=True)
                 
                 # Summary statistics
                 col1, col2, col3 = st.columns(3)
@@ -430,10 +461,29 @@ def batch_prediction_page():
                     failure_rate = (failure_count / total_engines * 100) if total_engines > 0 else 0
                     st.metric("Failure Rate", f"{failure_rate:.1f}%")
                 
-                # Visualization
+                # Visualization with custom colors
                 status_counts = results_df['Status'].value_counts()
+                
+                # Define colors matching our theme
+                colors = []
+                for status in status_counts.index:
+                    if status == 'Healthy':
+                        colors.append('#28a745')  # Green for healthy
+                    elif status == 'Near Failure':
+                        colors.append('#dc3545')  # Red for failure
+                    else:
+                        colors.append('#6c757d')  # Gray for unknown
+                
                 fig = px.pie(values=status_counts.values, names=status_counts.index, 
-                           title="Engine Health Distribution")
+                           title="Engine Health Distribution",
+                           color_discrete_sequence=colors)
+                
+                # Update layout for better appearance
+                fig.update_traces(textposition='inside', textinfo='percent+label')
+                fig.update_layout(
+                    showlegend=True,
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                )
                 st.plotly_chart(fig, use_container_width=True)
                 
                 # Download results
